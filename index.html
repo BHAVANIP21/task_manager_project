@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Task Manager</title>
+</head>
+<body>
+  <h1>Task Manager</h1>
+  <input type="text" id="taskInput" placeholder="New task...">
+  <button onclick="addTask()">Add</button>
+  <ul id="taskList"></ul>
+
+  <script>
+    const apiURL = 'http://127.0.0.1:5000/api/tasks';
+
+    async function loadTasks() {
+      const res = await fetch(apiURL);
+      const tasks = await res.json();
+      const list = document.getElementById('taskList');
+      list.innerHTML = '';
+      tasks.forEach(task => {
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <input type="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask(${task.id}, this.checked)">
+          ${task.title}
+          <button onclick="deleteTask(${task.id})">Delete</button>
+        `;
+        list.appendChild(li);
+      });
+    }
+
+    async function addTask() {
+      const title = document.getElementById('taskInput').value;
+      if (!title.trim()) return alert("Please enter a task title");
+
+      await fetch(apiURL, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({title})
+      });
+      document.getElementById('taskInput').value = '';
+      loadTasks();
+    }
+
+    async function toggleTask(id, completed) {
+      const res = await fetch(`${apiURL}/${id}`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ title: "Placeholder", completed }) // Title must be passed
+      });
+
+      // Reload tasks with correct titles
+      loadTasks();
+    }
+
+    async function deleteTask(id) {
+      await fetch(`${apiURL}/${id}`, { method: 'DELETE' });
+      loadTasks();
+    }
+
+    loadTasks();
+  </script>
+</body>
+</html>
